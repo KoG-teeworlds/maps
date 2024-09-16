@@ -1,0 +1,40 @@
+---
+name: "Map Upload"
+about: "Submit a new map upload for review"
+title: "[Map Upload] <Map Name>"
+labels: map-upload, review
+assignees: ""
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 📍 **New Map Upload**
+        Please fill out the following details to submit a new map upload for review.
+
+  - type: input
+    id: map_name
+    attributes:
+      label: "Map Name"
+      description: "Provide the name of the map"
+      placeholder: "Enter the map name"
+
+  - type: input
+    id: map_description
+    attributes:
+      label: "Map Description"
+      description: "Provide a brief description of the map"
+      placeholder: "Enter a description"
+
+  - type: input
+    id: map_author
+    attributes:
+      label: "Map Author"
+      description: "Name of the uploader or source"
+      placeholder: "Enter the map author"
+
+  - type: markdown
+    attributes:
+      value: |
+        ## 🚀 **Action Triggers**
+        - Work in progress
