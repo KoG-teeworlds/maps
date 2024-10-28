@@ -9,9 +9,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: KoG-teeworlds/maps-workflow@v1
-      - name: Create comment
-        uses: peter-evans/create-or-update-comment@v4
+      - name: comment on the pull request
+        uses: hasura/comment-progress@v2.3.0
         with:
-          body: |
-            This is a multi-line test comment
-            - With GitHub **Markdown** :sparkles:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          number: ${{ github.event.number }}
+          id: thank-you-comment
+          message: "Thank you for opening this PR :pray:"
