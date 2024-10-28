@@ -9,3 +9,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: KoG-teeworlds/maps-workflow@v1
+      - name: Create comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          body: |
+            This is a multi-line test comment
+            - With GitHub **Markdown** :sparkles:
