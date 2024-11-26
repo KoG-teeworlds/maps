@@ -32,6 +32,8 @@ jobs:
         uses: KoG-teeworlds/maps-workflow@main
         with:
           maps: ${{ steps.changed-files.outputs.changed_files }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: "KoG-teeworlds/maps"
 
       - name: comment on the pull request
         uses: hasura/comment-progress@v2.3.0
