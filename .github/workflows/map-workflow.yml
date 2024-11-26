@@ -39,6 +39,7 @@ jobs:
 
       - name: Run maps workflow
         uses: KoG-teeworlds/maps-workflow@main
+        id: maps-workflow
         with:
           maps: ${{ steps.changed-files.outputs.changed_files }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -51,5 +52,5 @@ jobs:
           repository: "KoG-teeworlds/maps"
           number: ${{ github.event.number }}
           id: status-comment
-          message: "Maps have been evaluated :pray:"
+          message: "Maps have been evaluated :pray: ${{ steps.maps-workflow.outputs.status }}"
           recreate: true
