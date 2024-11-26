@@ -20,7 +20,8 @@ jobs:
             changed_files=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }})
           fi
 
-          echo "changed_files=$(echo $changed_files | tr '\n' ',')" >> $GITHUB_OUTPUT
+          formatted_files=$(echo "$changed_files" | tr '\n' ',' | sed 's/,$//')
+          echo "changed_files=$formatted_files" >> $GITHUB_OUTPUT
 
       - name: Debug changed files
         shell: bash
