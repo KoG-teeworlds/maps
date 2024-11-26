@@ -11,6 +11,15 @@ jobs:
         with:
           fetch-depth: ${{ github.event_name == 'pull_request' && 2 || 0 }}
 
+      - name: Comment on pull request
+        uses: hasura/comment-progress@v2.3.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: "KoG-teeworlds/maps"
+          number: ${{ github.event.number }}
+          id: status-comment
+          message: "Thank you for opening this PR, maps will now be checked... :pray:"
+
       - name: Get changed files
         id: changed-files
         run: |
@@ -35,11 +44,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: "KoG-teeworlds/maps"
 
-      - name: comment on the pull request
+      - name: Comment on pull request
         uses: hasura/comment-progress@v2.3.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           repository: "KoG-teeworlds/maps"
           number: ${{ github.event.number }}
-          id: thank-you-comment
-          message: "Thank you for opening this PR :pray:"
+          id: status-comment
+          message: "Maps have been evaluated :pray:"
+          recreate: true
