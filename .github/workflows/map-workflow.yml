@@ -52,5 +52,5 @@ jobs:
           repository: "KoG-teeworlds/maps"
           number: ${{ github.event.number }}
           id: status-comment
-          message: "Maps have been evaluated :pray: ${{ steps.maps-workflow.outputs.status }}"
+          message: "Maps have been evaluated :pray: \n${{ steps.maps-workflow.outputs.status }}"
           recreate: true
