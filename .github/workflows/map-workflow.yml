@@ -28,13 +28,7 @@ jobs:
         run: |
           echo "Changed files: ${{ steps.changed-files.outputs.changed_files }}"
 
-      - name: Upload changed files as artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: maps-files
-          path: ${{ steps.changed-files.outputs.changed_files }}
-
-      - name: List changed files
+      - name: Run maps workflow
         uses: KoG-teeworlds/maps-workflow@main
         with:
           maps: ${{ steps.changed-files.outputs.changed_files }}
