@@ -19,13 +19,6 @@ body:
       placeholder: "Enter the map name"
 
   - type: input
-    id: map_description
-    attributes:
-      label: "Map Description"
-      description: "Provide a brief description of the map"
-      placeholder: "Enter a description"
-
-  - type: input
     id: map_author
     attributes:
       label: "Map Author"
