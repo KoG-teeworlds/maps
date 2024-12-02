@@ -42,7 +42,8 @@ jobs:
           action: check
 
       - name: Generate new vote list
-        continue-on-error: true
+        needs:
+          - maps-workflow
         uses: KoG-teeworlds/maps-workflow@main
         id: maps-workflow-generate-votes
         with:
