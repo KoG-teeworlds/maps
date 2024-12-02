@@ -1,0 +1,30 @@
+name: Optimize maps
+on:
+  push:
+    branches:
+      - 'main'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: ${{ github.event_name == 'pull_request' && 2 || 0 }}
+
+      - name: Get changed files
+        id: changed-files
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            changed_files=$(git diff --name-only HEAD^)
+          else
+            changed_files=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }})
+          fi
+
+          formatted_files=$(echo "$changed_files" | tr '\n' ',' | sed 's/,$//')
+          echo "changed_files=$formatted_files" >> $GITHUB_OUTPUT
+
+      - name: Debug changed files
+        shell: bash
+        run: |
+          echo "Changed files: ${{ steps.changed-files.outputs.changed_files }}"
