@@ -51,6 +51,7 @@ jobs:
 
       - name: Comment on pull request
         uses: hasura/comment-progress@v2.3.0
+        continue-on-error: true
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           repository: "KoG-teeworlds/maps"
