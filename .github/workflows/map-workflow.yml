@@ -45,6 +45,10 @@ jobs:
           GITHUB_REPOSITORY: "KoG-teeworlds/maps"
           action: check
 
+  generate_new_votes:
+    runs-on: ubuntu-latest
+    needs: evaluate
+    steps:
       - name: Generate new vote list
         needs:
           - maps-workflow
