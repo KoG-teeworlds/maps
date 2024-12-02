@@ -28,3 +28,12 @@ jobs:
         shell: bash
         run: |
           echo "Changed files: ${{ steps.changed-files.outputs.changed_files }}"
+
+      - name: Generate map votes
+        uses: KoG-teeworlds/maps-workflow@main
+        id: maps-workflow-generate-votes
+        with:
+          maps: ${{ steps.changed-files.outputs.changed_files }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: "KoG-teeworlds/maps"
+          action: "generate_votes"
