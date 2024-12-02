@@ -50,8 +50,6 @@ jobs:
     needs: evaluate
     steps:
       - name: Generate new vote list
-        needs:
-          - maps-workflow
         uses: KoG-teeworlds/maps-workflow@main
         id: maps-workflow-generate-votes
         with:
