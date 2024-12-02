@@ -39,6 +39,15 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: "KoG-teeworlds/maps"
 
+      - name: Generate new vote list
+        uses: KoG-teeworlds/maps-workflow@main
+        id: maps-workflow-generate-votes
+        with:
+          maps: ${{ steps.changed-files.outputs.changed_files }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: "KoG-teeworlds/maps"
+          action: check_if_vote_exists
+
       - name: Comment on pull request
         uses: hasura/comment-progress@v2.3.0
         with:
@@ -46,5 +55,5 @@ jobs:
           repository: "KoG-teeworlds/maps"
           number: ${{ github.event.number }}
           id: status-comment
-          message: "Maps have been evaluated :pray: \n${{ steps.maps-workflow.outputs.status }}"
+          message: "Maps have been evaluated :pray: \n${{ steps.maps-workflow.outputs.status }}\n${{ steps.maps-workflow-generate-votes.outputs.status}}"
           recreate: true
