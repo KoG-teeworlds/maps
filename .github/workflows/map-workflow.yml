@@ -3,13 +3,9 @@ on:
   pull_request:
 
 jobs:
-  build:
+  notification:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: ${{ github.event_name == 'pull_request' && 2 || 0 }}
-
       - name: Comment on pull request
         uses: hasura/comment-progress@v2.3.0
         with:
@@ -18,6 +14,13 @@ jobs:
           number: ${{ github.event.number }}
           id: status-comment
           message: "Thank you for opening this PR, maps will now be checked... :pray:"
+
+  evaluate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: ${{ github.event_name == 'pull_request' && 2 || 0 }}
 
       - name: Get changed files
         id: changed-files
@@ -52,6 +55,10 @@ jobs:
           GITHUB_REPOSITORY: "KoG-teeworlds/maps"
           action: check_if_vote_exists
 
+  report:
+    runs-on: ubuntu-latest
+    needs: evaluate
+    steps:
       - name: Comment on pull request
         uses: hasura/comment-progress@v2.3.0
         with:
@@ -59,5 +66,5 @@ jobs:
           repository: "KoG-teeworlds/maps"
           number: ${{ github.event.number }}
           id: status-comment
-          message: "Maps have been evaluated :pray: \n${{ steps.maps-workflow.outputs.status }}\n${{ steps.maps-workflow-generate-votes.outputs.status}}"
+          message: "Maps have been evaluated :pray: \n${{ needs.evaluate.maps-workflow.outputs.status }}\n${{ needs.evaluate.maps-workflow-generate-votes.outputs.status}}"
           recreate: true
