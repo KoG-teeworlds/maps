@@ -38,6 +38,7 @@ jobs:
           maps: ${{ steps.changed-files.outputs.changed_files }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: "KoG-teeworlds/maps"
+          action: check
 
       - name: Generate new vote list
         uses: KoG-teeworlds/maps-workflow@main
