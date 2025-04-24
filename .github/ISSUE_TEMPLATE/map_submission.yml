@@ -1,7 +1,7 @@
 name: "Map Upload"
 title: "[Map Upload] <Map Name>"
 labels: map-upload, review
-assignees: ""
+assignees: []
 
 body:
   - type: markdown
