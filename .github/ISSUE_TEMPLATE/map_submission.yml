@@ -1,5 +1,4 @@
 name: "Map Upload"
-about: "Submit a new map upload for review"
 title: "[Map Upload] <Map Name>"
 labels: map-upload, review
 assignees: ""
