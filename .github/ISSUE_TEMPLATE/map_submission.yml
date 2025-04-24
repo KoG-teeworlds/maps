@@ -1,4 +1,5 @@
 name: "Map Upload"
+description: "Submit a new map"
 title: "[Map Upload] <Map Name>"
 labels: map-upload, review
 assignees: []
