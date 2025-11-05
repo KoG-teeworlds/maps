@@ -6,7 +6,9 @@ on:
 
 jobs:
   create-mr-from-issue:
-    if: contains(github.event.issue.labels.*.name, 'map-upload')
+    if: |
+      (github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'map-upload')) ||
+      (github.event.action == 'labeled' && github.event.label.name == 'map-upload')
     runs-on: ubuntu-latest
     permissions:
       issues: write
@@ -83,13 +85,13 @@ jobs:
 
             let collaboratorsText = '';
             if (collaboratorsList.length > 0) {
-              collaboratorsText = `\n**Collaborators:** ${collaboratorsList.map(c => '@' + c).join(', ')}`;
+              collaboratorsText = '\n**Collaborators:** ' + collaboratorsList.map(c => '@' + c).join(', ');
             }
 
             const mapUrl = '${{ steps.extract-info.outputs.map_url }}';
             let mapUrlText = '';
             if (mapUrl && mapUrl.trim().length > 0 && mapUrl.startsWith('http')) {
-              mapUrlText = `\n**Map File URL:** ${mapUrl}\n\n> 💡 You can download the map from the URL above, or the submitter can upload it directly to this PR.`;
+              mapUrlText = '\n**Map File URL:** ' + mapUrl + '\n\n> 💡 You can download the map from the URL above, or the submitter can upload it directly to this PR.';
             }
 
             const allowedUsers = ['@${{ github.event.issue.user.login }}'];
@@ -204,7 +206,7 @@ jobs:
             let collaboratorText = '';
             if (collaboratorsList.length > 0) {
               const collaboratorMentions = collaboratorsList.map(c => '@' + c).join(', ');
-              collaboratorText = `\n- Your collaborators (${collaboratorMentions}) have been notified and can also contribute`;
+              collaboratorText = '\n- Your collaborators (' + collaboratorMentions + ') have been notified and can also contribute';
             }
 
             const issueCommentBody = 'Thank you for your map submission! 🎮\n\n' +
