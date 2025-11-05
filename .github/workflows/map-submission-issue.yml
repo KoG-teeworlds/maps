@@ -1,0 +1,233 @@
+name: Map Submission Issue Handler
+
+on:
+  issues:
+    types: [opened, labeled]
+
+jobs:
+  create-mr-from-issue:
+    # Only run if the issue has the map-upload label
+    if: contains(github.event.issue.labels.*.name, 'map-upload')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract map information from issue
+        id: extract-info
+        run: |
+          # Extract map name and author from issue body
+          issue_body="${{ github.event.issue.body }}"
+
+          # Parse the issue body to extract map name
+          map_name=$(echo "$issue_body" | grep -A1 "Map Name" | tail -1 | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+
+          # Parse the issue body to extract map author
+          map_author=$(echo "$issue_body" | grep -A1 "Map Author" | tail -1 | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+
+          # Parse collaborators (optional field)
+          collaborators=$(echo "$issue_body" | grep -A1 "Collaborators" | tail -1 | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+
+          # Clean up the map name for branch naming (remove special chars)
+          branch_name=$(echo "$map_name" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-//;s/-$//')
+
+          echo "map_name=$map_name" >> $GITHUB_OUTPUT
+          echo "map_author=$map_author" >> $GITHUB_OUTPUT
+          echo "collaborators=$collaborators" >> $GITHUB_OUTPUT
+          echo "branch_name=map-submission-$branch_name-issue-${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
+
+      - name: Create branch for map submission
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git checkout -b "${{ steps.extract-info.outputs.branch_name }}"
+
+          # Create a placeholder file to commit (will be replaced by actual map)
+          mkdir -p maps/pending-upload
+          cat > maps/pending-upload/README-issue-${{ github.event.issue.number }}.md << 'EOF'
+          # Map Upload Pending
+
+          **Map Name:** ${{ steps.extract-info.outputs.map_name }}
+          **Author:** ${{ steps.extract-info.outputs.map_author }}
+          **Issue:** #${{ github.event.issue.number }}
+
+          This is a placeholder. Please upload your map file to this pull request.
+          EOF
+
+          git add .
+          git commit -m "chore: create map submission for ${{ steps.extract-info.outputs.map_name }} (issue #${{ github.event.issue.number }})"
+          git push origin "${{ steps.extract-info.outputs.branch_name }}"
+
+      - name: Create Pull Request
+        id: create-pr
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const collaborators = '${{ steps.extract-info.outputs.collaborators }}';
+            const collaboratorsList = collaborators
+              .split(',')
+              .map(c => c.trim().replace('@', ''))
+              .filter(c => c.length > 0);
+
+            let collaboratorsText = '';
+            if (collaboratorsList.length > 0) {
+              collaboratorsText = `\n**Collaborators:** ${collaboratorsList.map(c => '@' + c).join(', ')}`;
+            }
+
+            const allowedUsers = ['@${{ github.event.issue.user.login }}'];
+            if (collaboratorsList.length > 0) {
+              allowedUsers.push(...collaboratorsList.map(c => '@' + c));
+            }
+
+            const { data: pr } = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `[Map Upload] ${{ steps.extract-info.outputs.map_name }}`,
+              head: '${{ steps.extract-info.outputs.branch_name }}',
+              base: 'main',
+              body: `## Map Submission from Issue #${{ github.event.issue.number }}
+
+              **Map Name:** ${{ steps.extract-info.outputs.map_name }}
+              **Author:** ${{ steps.extract-info.outputs.map_author }}${collaboratorsText}
+
+              ---
+
+              ### 📤 Next Steps
+
+              **@${{ github.event.issue.user.login }}**${collaboratorsList.length > 0 ? ' and collaborators' : ''}, please upload your map file to this pull request:
+
+              1. Click on "Files changed" tab above
+              2. Click "Add file" → "Upload files"
+              3. Drag and drop your map file (`.map` file)
+              4. Make sure to place it in the correct directory (e.g., \`maps/\`)
+              5. Commit your changes
+
+              ### ⚠️ Important Notes
+
+              - **Allowed contributors:** ${allowedUsers.join(', ')}
+              - Collaborators need to fork the repo and push to the branch \`${{ steps.extract-info.outputs.branch_name }}\`
+              - Please upload the actual map file and remove the placeholder README
+              - Your map will be automatically validated once uploaded
+
+              ---
+
+              Closes #${{ github.event.issue.number }}`
+            });
+
+            // Store collaborators for next step
+            core.setOutput('collaborators_list', collaboratorsList.join(','));
+
+            return pr.number;
+
+      - name: Add collaborators and labels to PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prNumber = ${{ steps.create-pr.outputs.result }};
+            const collaboratorsList = '${{ steps.create-pr.outputs.collaborators_list }}'.split(',').filter(c => c.length > 0);
+
+            // Add the map-upload label to the PR
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              labels: ['map-upload', 'review']
+            });
+
+            // Add issue creator and collaborators as assignees
+            const assignees = ['${{ github.event.issue.user.login }}', ...collaboratorsList];
+            if (assignees.length > 0) {
+              try {
+                await github.rest.issues.addAssignees({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  assignees: assignees
+                });
+              } catch (error) {
+                console.log('Note: Some users might not have permission to be assigned:', error.message);
+              }
+            }
+
+            // Comment on PR to notify collaborators
+            if (collaboratorsList.length > 0) {
+              const collaboratorMentions = collaboratorsList.map(c => '@' + c).join(' ');
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: `👋 ${collaboratorMentions} - You've been added as a collaborator on this map submission!
+
+You can contribute to this PR by:
+1. Forking this repository (if you haven't already)
+2. Adding this repository as a remote
+3. Fetching and checking out the branch: \`${{ steps.extract-info.outputs.branch_name }}\`
+4. Making your changes and pushing to this branch
+5. Or using the GitHub UI to upload files directly to this PR
+
+Let @${{ github.event.issue.user.login }} know if you need any help! 🚀`
+              });
+            }
+
+      - name: Close issue with instructions
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prNumber = ${{ steps.create-pr.outputs.result }};
+            const collaboratorsList = '${{ steps.create-pr.outputs.collaborators_list }}'.split(',').filter(c => c.length > 0);
+
+            let collaboratorText = '';
+            if (collaboratorsList.length > 0) {
+              const collaboratorMentions = collaboratorsList.map(c => '@' + c).join(', ');
+              collaboratorText = `\n- Your collaborators (${collaboratorMentions}) have been notified and can also contribute`;
+            }
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ github.event.issue.number }},
+              body: `Thank you for your map submission! 🎮
+
+              A pull request has been automatically created for your map: #${prNumber}
+
+              ## 📤 Please upload your map file to the pull request
+
+              **Important:** Instead of uploading here in this issue, please go to the pull request and upload your map file there.
+
+              ### How to upload:
+
+              1. Go to pull request #${prNumber}
+              2. Click on the "Files changed" tab
+              3. Click "Add file" → "Upload files" (or use the GitHub UI)
+              4. Upload your \`.map\` file to the appropriate directory
+              5. Commit the changes
+
+              ### ⚠️ Upload Permissions
+
+              - You (@${{ github.event.issue.user.login }}) and any collaborators can push changes to this pull request${collaboratorText}
+              - Code owners will review your submission once the map file is uploaded
+
+              This issue will now be closed. All further discussion should happen in the pull request.
+
+              See you in PR #${prNumber}! 🚀`
+            });
+
+            // Close the issue
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ github.event.issue.number }},
+              state: 'closed',
+              state_reason: 'completed'
+            });

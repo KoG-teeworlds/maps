@@ -25,8 +25,19 @@ body:
       description: "Name of the uploader or source"
       placeholder: "Enter the map author"
 
+  - type: input
+    id: collaborators
+    attributes:
+      label: "Collaborators (Optional)"
+      description: "GitHub usernames of people who should be able to contribute to this submission (comma-separated)"
+      placeholder: "e.g., @user1, @user2, @user3"
+    validations:
+      required: false
+
   - type: markdown
     attributes:
       value: |
         ## 🚀 **Action Triggers**
-        - Work in progress
+        - A pull request will be automatically created
+        - You and your collaborators will be able to upload files to the PR
+        - Instructions will be provided in the PR
