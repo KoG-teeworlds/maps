@@ -6,7 +6,6 @@ on:
 
 jobs:
   create-mr-from-issue:
-    # Only run if the issue has the map-upload label
     if: contains(github.event.issue.labels.*.name, 'map-upload')
     runs-on: ubuntu-latest
     permissions:
@@ -198,6 +197,8 @@ Let @${issueAuthor} know if you need any help! 🚀`
           script: |
             const prNumber = ${{ steps.create-pr.outputs.result }};
             const collaboratorsList = '${{ steps.create-pr.outputs.collaborators_list }}'.split(',').filter(c => c.length > 0);
+            const issueNumber = ${{ github.event.issue.number }};
+            const issueAuthor = '${{ github.event.issue.user.login }}';
 
             let collaboratorText = '';
             if (collaboratorsList.length > 0) {
@@ -208,7 +209,7 @@ Let @${issueAuthor} know if you need any help! 🚀`
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: ${{ github.event.issue.number }},
+              issue_number: issueNumber,
               body: `Thank you for your map submission! 🎮
 
               A pull request has been automatically created for your map: #${prNumber}
@@ -227,7 +228,7 @@ Let @${issueAuthor} know if you need any help! 🚀`
 
               ### ⚠️ Upload Permissions
 
-              - You (@${{ github.event.issue.user.login }}) and any collaborators can push changes to this pull request${collaboratorText}
+              - You (@${issueAuthor}) and any collaborators can push changes to this pull request${collaboratorText}
               - Code owners will review your submission once the map file is uploaded
 
               This issue will now be closed. All further discussion should happen in the pull request.
@@ -239,7 +240,7 @@ Let @${issueAuthor} know if you need any help! 🚀`
             await github.rest.issues.update({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: ${{ github.event.issue.number }},
+              issue_number: issueNumber,
               state: 'closed',
               state_reason: 'completed'
             });
