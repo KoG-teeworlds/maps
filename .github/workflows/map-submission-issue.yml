@@ -21,7 +21,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Extract map information from issue
+      - name: Extract and validate map information
         id: extract-info
         run: |
           # Extract map name and author from issue body
@@ -38,6 +38,38 @@ jobs:
 
           # Parse map URL (optional field)
           map_url=$(echo "$issue_body" | grep -A1 "Map File URL" | tail -1 | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+
+          # Validation
+          validation_errors=""
+
+          # Validate map name
+          if [ -z "$map_name" ] || [ "$map_name" = "_No response_" ]; then
+            validation_errors="${validation_errors}- Map name is required and cannot be empty\n"
+          elif [ ${#map_name} -lt 3 ]; then
+            validation_errors="${validation_errors}- Map name must be at least 3 characters long\n"
+          elif [ ${#map_name} -gt 100 ]; then
+            validation_errors="${validation_errors}- Map name must be less than 100 characters\n"
+          fi
+
+          # Validate map author
+          if [ -z "$map_author" ] || [ "$map_author" = "_No response_" ]; then
+            validation_errors="${validation_errors}- Map author is required and cannot be empty\n"
+          elif [ ${#map_author} -lt 2 ]; then
+            validation_errors="${validation_errors}- Map author must be at least 2 characters long\n"
+          elif [ ${#map_author} -gt 50 ]; then
+            validation_errors="${validation_errors}- Map author must be less than 50 characters\n"
+          fi
+
+          # If there are validation errors, report them and exit
+          if [ -n "$validation_errors" ]; then
+            echo "validation_failed=true" >> $GITHUB_OUTPUT
+            echo "validation_errors<<EOF" >> $GITHUB_OUTPUT
+            echo -e "$validation_errors" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+          echo "validation_failed=false" >> $GITHUB_OUTPUT
 
           # Clean up the map name for branch naming (remove special chars)
           branch_name=$(echo "$map_name" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-//;s/-$//')
