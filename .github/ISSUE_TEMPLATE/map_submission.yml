@@ -34,10 +34,34 @@ body:
     validations:
       required: false
 
+  - type: input
+    id: map_url
+    attributes:
+      label: "Map File URL (Optional)"
+      description: "If you have the map file hosted somewhere (e.g., Discord, Google Drive, Dropbox), provide the download link here. Otherwise, you'll upload it directly to the PR."
+      placeholder: "https://example.com/mymap.map"
+    validations:
+      required: false
+
   - type: markdown
     attributes:
       value: |
-        ## 🚀 **Action Triggers**
+        ## 📤 **How Map Upload Works**
+
+        **Note:** GitHub issues don't support file uploads directly. Instead:
+
+        1. ✅ Submit this issue with the information above
+        2. 🤖 A pull request will be **automatically created** for you
+        3. 📁 You'll upload your `.map` file to that pull request
+        4. ✨ Your map will be validated and reviewed
+
+        **Don't worry!** You'll receive detailed instructions in the PR on how to upload your map file.
+
+  - type: markdown
+    attributes:
+      value: |
+        ## 🚀 **What Happens Next**
         - A pull request will be automatically created
         - You and your collaborators will be able to upload files to the PR
-        - Instructions will be provided in the PR
+        - The issue will be closed with a link to the PR
+        - Upload your map file to the PR and wait for review

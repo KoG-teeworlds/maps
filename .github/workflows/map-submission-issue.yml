@@ -35,12 +35,16 @@ jobs:
           # Parse collaborators (optional field)
           collaborators=$(echo "$issue_body" | grep -A1 "Collaborators" | tail -1 | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
 
+          # Parse map URL (optional field)
+          map_url=$(echo "$issue_body" | grep -A1 "Map File URL" | tail -1 | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+
           # Clean up the map name for branch naming (remove special chars)
           branch_name=$(echo "$map_name" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-//;s/-$//')
 
           echo "map_name=$map_name" >> $GITHUB_OUTPUT
           echo "map_author=$map_author" >> $GITHUB_OUTPUT
           echo "collaborators=$collaborators" >> $GITHUB_OUTPUT
+          echo "map_url=$map_url" >> $GITHUB_OUTPUT
           echo "branch_name=map-submission-$branch_name-issue-${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
 
       - name: Create branch for map submission
@@ -83,6 +87,12 @@ jobs:
               collaboratorsText = `\n**Collaborators:** ${collaboratorsList.map(c => '@' + c).join(', ')}`;
             }
 
+            const mapUrl = '${{ steps.extract-info.outputs.map_url }}';
+            let mapUrlText = '';
+            if (mapUrl && mapUrl.trim().length > 0 && mapUrl.startsWith('http')) {
+              mapUrlText = `\n**Map File URL:** ${mapUrl}\n\n> 💡 You can download the map from the URL above, or the submitter can upload it directly to this PR.`;
+            }
+
             const allowedUsers = ['@${{ github.event.issue.user.login }}'];
             if (collaboratorsList.length > 0) {
               allowedUsers.push(...collaboratorsList.map(c => '@' + c));
@@ -97,7 +107,7 @@ jobs:
               body: `## Map Submission from Issue #${{ github.event.issue.number }}
 
               **Map Name:** ${{ steps.extract-info.outputs.map_name }}
-              **Author:** ${{ steps.extract-info.outputs.map_author }}${collaboratorsText}
+              **Author:** ${{ steps.extract-info.outputs.map_author }}${collaboratorsText}${mapUrlText}
 
               ---
 
@@ -162,6 +172,8 @@ jobs:
             // Comment on PR to notify collaborators
             if (collaboratorsList.length > 0) {
               const collaboratorMentions = collaboratorsList.map(c => '@' + c).join(' ');
+              const branchName = '${{ steps.extract-info.outputs.branch_name }}';
+              const issueAuthor = '${{ github.event.issue.user.login }}';
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -171,11 +183,11 @@ jobs:
 You can contribute to this PR by:
 1. Forking this repository (if you haven't already)
 2. Adding this repository as a remote
-3. Fetching and checking out the branch: \`${{ steps.extract-info.outputs.branch_name }}\`
+3. Fetching and checking out the branch: \`${branchName}\`
 4. Making your changes and pushing to this branch
 5. Or using the GitHub UI to upload files directly to this PR
 
-Let @${{ github.event.issue.user.login }} know if you need any help! 🚀`
+Let @${issueAuthor} know if you need any help! 🚀`
               });
             }
 
