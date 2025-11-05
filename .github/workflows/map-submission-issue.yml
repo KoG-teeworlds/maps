@@ -14,44 +14,6 @@ jobs:
       contents: write
 
     steps:
-      - name: Create labels
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const labels = [
-              {
-                name: "map-upload",
-                color: "FBCA04",
-                description: "Indicates a map submission that is pending review and merging.",
-              },
-              {
-                name: "review",
-                color: "0E8A16",
-                description: "Indicates that a pull request or issue is ready for review.",
-              },
-            ];
-
-            for (const label of labels) {
-              try {
-                await github.rest.issues.getLabel({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  name: label.name,
-                });
-              } catch (error) {
-                if (error.status === 404) {
-                  await github.rest.issues.createLabel({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    name: label.name,
-                    color: label.color,
-                    description: label.description,
-                  });
-                } else {
-                  throw error;
-                }
-              }
-            }
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -64,16 +26,16 @@ jobs:
           issue_body="${{ github.event.issue.body }}"
 
           # Parse the issue body to extract map name
-          map_name=$(echo "$issue_body" | grep -A1 "Map Name" | tail -1 | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+          map_name=$(echo "$issue_body" | awk '/### Map Name/{f=1;next} /###/{f=0} f' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;/^$/d' | head -1)
 
           # Parse the issue body to extract map author
-          map_author=$(echo "$issue_body" | grep -A1 "Map Author" | tail -1 | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+          map_author=$(echo "$issue_body" | awk '/### Map Author/{f=1;next} /###/{f=0} f' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;/^$/d' | head -1)
 
           # Parse collaborators (optional field)
-          collaborators=$(echo "$issue_body" | grep -A1 "Collaborators" | tail -1 | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+          collaborators=$(echo "$issue_body" | awk '/### Collaborators/{f=1;next} /###/{f=0} f' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;/^$/d' | head -1)
 
           # Parse map URL (optional field)
-          map_url=$(echo "$issue_body" | grep -A1 "Map File URL" | tail -1 | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+          map_url=$(echo "$issue_body" | awk '/### Map File URL/{f=1;next} /###/{f=0} f' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;/^$/d' | head -1)
 
           # Validation
           validation_errors=""
