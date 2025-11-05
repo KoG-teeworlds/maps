@@ -97,39 +97,40 @@ jobs:
               allowedUsers.push(...collaboratorsList.map(c => '@' + c));
             }
 
+            const mapName = '${{ steps.extract-info.outputs.map_name }}';
+            const mapAuthor = '${{ steps.extract-info.outputs.map_author }}';
+            const branchName = '${{ steps.extract-info.outputs.branch_name }}';
+            const issueNumber = ${{ github.event.issue.number }};
+            const issueAuthor = '${{ github.event.issue.user.login }}';
+
+            const prTitle = '[Map Upload] ' + mapName;
+            const collaboratorSuffix = collaboratorsList.length > 0 ? ' and collaborators' : '';
+            const prBody = '## Map Submission from Issue #' + issueNumber + '\n\n' +
+              '**Map Name:** ' + mapName + '\n' +
+              '**Author:** ' + mapAuthor + collaboratorsText + mapUrlText + '\n\n' +
+              '---\n\n' +
+              '### 📤 Next Steps\n\n' +
+              '**@' + issueAuthor + '**' + collaboratorSuffix + ', please upload your map file to this pull request:\n\n' +
+              '1. Click on "Files changed" tab above\n' +
+              '2. Click "Add file" → "Upload files"\n' +
+              '3. Drag and drop your map file (`.map` file)\n' +
+              '4. Make sure to place it in the correct directory (e.g., `maps/`)\n' +
+              '5. Commit your changes\n\n' +
+              '### ⚠️ Important Notes\n\n' +
+              '- **Allowed contributors:** ' + allowedUsers.join(', ') + '\n' +
+              '- Collaborators need to fork the repo and push to the branch `' + branchName + '`\n' +
+              '- Please upload the actual map file and remove the placeholder README\n' +
+              '- Your map will be automatically validated once uploaded\n\n' +
+              '---\n\n' +
+              'Closes #' + issueNumber;
+
             const { data: pr } = await github.rest.pulls.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `[Map Upload] ${{ steps.extract-info.outputs.map_name }}`,
-              head: '${{ steps.extract-info.outputs.branch_name }}',
+              title: prTitle,
+              head: branchName,
               base: 'main',
-              body: `## Map Submission from Issue #${{ github.event.issue.number }}
-
-              **Map Name:** ${{ steps.extract-info.outputs.map_name }}
-              **Author:** ${{ steps.extract-info.outputs.map_author }}${collaboratorsText}${mapUrlText}
-
-              ---
-
-              ### 📤 Next Steps
-
-              **@${{ github.event.issue.user.login }}**${collaboratorsList.length > 0 ? ' and collaborators' : ''}, please upload your map file to this pull request:
-
-              1. Click on "Files changed" tab above
-              2. Click "Add file" → "Upload files"
-              3. Drag and drop your map file (`.map` file)
-              4. Make sure to place it in the correct directory (e.g., \`maps/\`)
-              5. Commit your changes
-
-              ### ⚠️ Important Notes
-
-              - **Allowed contributors:** ${allowedUsers.join(', ')}
-              - Collaborators need to fork the repo and push to the branch \`${{ steps.extract-info.outputs.branch_name }}\`
-              - Please upload the actual map file and remove the placeholder README
-              - Your map will be automatically validated once uploaded
-
-              ---
-
-              Closes #${{ github.event.issue.number }}`
+              body: prBody
             });
 
             // Store collaborators for next step
@@ -173,20 +174,20 @@ jobs:
               const collaboratorMentions = collaboratorsList.map(c => '@' + c).join(' ');
               const branchName = '${{ steps.extract-info.outputs.branch_name }}';
               const issueAuthor = '${{ github.event.issue.user.login }}';
+              const commentBody = '👋 ' + collaboratorMentions + ' - You\'ve been added as a collaborator on this map submission!\n\n' +
+                'You can contribute to this PR by:\n' +
+                '1. Forking this repository (if you haven\'t already)\n' +
+                '2. Adding this repository as a remote\n' +
+                '3. Fetching and checking out the branch: `' + branchName + '`\n' +
+                '4. Making your changes and pushing to this branch\n' +
+                '5. Or using the GitHub UI to upload files directly to this PR\n\n' +
+                'Let @' + issueAuthor + ' know if you need any help! 🚀';
+
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: prNumber,
-                body: `👋 ${collaboratorMentions} - You've been added as a collaborator on this map submission!
-
-You can contribute to this PR by:
-1. Forking this repository (if you haven't already)
-2. Adding this repository as a remote
-3. Fetching and checking out the branch: \`${branchName}\`
-4. Making your changes and pushing to this branch
-5. Or using the GitHub UI to upload files directly to this PR
-
-Let @${issueAuthor} know if you need any help! 🚀`
+                body: commentBody
               });
             }
 
@@ -206,34 +207,27 @@ Let @${issueAuthor} know if you need any help! 🚀`
               collaboratorText = `\n- Your collaborators (${collaboratorMentions}) have been notified and can also contribute`;
             }
 
+            const issueCommentBody = 'Thank you for your map submission! 🎮\n\n' +
+              'A pull request has been automatically created for your map: #' + prNumber + '\n\n' +
+              '## 📤 Please upload your map file to the pull request\n\n' +
+              '**Important:** Instead of uploading here in this issue, please go to the pull request and upload your map file there.\n\n' +
+              '### How to upload:\n\n' +
+              '1. Go to pull request #' + prNumber + '\n' +
+              '2. Click on the "Files changed" tab\n' +
+              '3. Click "Add file" → "Upload files" (or use the GitHub UI)\n' +
+              '4. Upload your `.map` file to the appropriate directory\n' +
+              '5. Commit the changes\n\n' +
+              '### ⚠️ Upload Permissions\n\n' +
+              '- You (@' + issueAuthor + ') and any collaborators can push changes to this pull request' + collaboratorText + '\n' +
+              '- Code owners will review your submission once the map file is uploaded\n\n' +
+              'This issue will now be closed. All further discussion should happen in the pull request.\n\n' +
+              'See you in PR #' + prNumber + '! 🚀';
+
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: issueNumber,
-              body: `Thank you for your map submission! 🎮
-
-              A pull request has been automatically created for your map: #${prNumber}
-
-              ## 📤 Please upload your map file to the pull request
-
-              **Important:** Instead of uploading here in this issue, please go to the pull request and upload your map file there.
-
-              ### How to upload:
-
-              1. Go to pull request #${prNumber}
-              2. Click on the "Files changed" tab
-              3. Click "Add file" → "Upload files" (or use the GitHub UI)
-              4. Upload your \`.map\` file to the appropriate directory
-              5. Commit the changes
-
-              ### ⚠️ Upload Permissions
-
-              - You (@${issueAuthor}) and any collaborators can push changes to this pull request${collaboratorText}
-              - Code owners will review your submission once the map file is uploaded
-
-              This issue will now be closed. All further discussion should happen in the pull request.
-
-              See you in PR #${prNumber}! 🚀`
+              body: issueCommentBody
             });
 
             // Close the issue
